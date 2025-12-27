@@ -22,7 +22,7 @@ fun VakiDrawerContent() {
         modifier = Modifier.width(drawerWidth),
         drawerContainerColor = Color.White,
         drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
-        windowInsets = WindowInsets.systemBars // Ensures smooth handling of status bar insets
+        windowInsets = WindowInsets.systemBars 
     ) {
         Spacer(Modifier.height(48.dp))
         Text(
@@ -31,18 +31,20 @@ fun VakiDrawerContent() {
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
         )
         NavigationDrawerItem(
-            label = { Text("Set Alarm") },
+            label = { Text("Set Alarm", fontWeight = FontWeight.Bold) },
             selected = false,
             onClick = { /* Set Alarm Logic */ },
-            icon = { Icon(Icons.Default.Notifications, contentDescription = null) },
-            modifier = Modifier.padding(horizontal = 12.dp)
+            icon = { Icon(Icons.Default.Notifications, contentDescription = null, tint = Color(0xFF6C63FF)) },
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color(0xFFF0EFFF))
         )
         NavigationDrawerItem(
-            label = { Text("Add Notes") },
+            label = { Text("Add Notes", fontWeight = FontWeight.Bold) },
             selected = false,
             onClick = { /* Add Notes Logic */ },
-            icon = { Icon(Icons.Default.Edit, contentDescription = null) },
-            modifier = Modifier.padding(horizontal = 12.dp)
+            icon = { Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFFFF7043)) },
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color(0xFFFFF2EF))
         )
     }
 }
