@@ -8,7 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -49,6 +48,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun FocusFlowApp(vakiVoice: VakiVoiceManager, viewModel: TaskViewModel = viewModel()) {
     var showSheet by remember { mutableStateOf(false) }
+    var isVoiceExpanded by remember { mutableStateOf(false) }
     val tasks = viewModel.tasks
     val completedCount = tasks.count { it.isCompleted }
     val totalCount = tasks.size
@@ -91,18 +91,15 @@ fun FocusFlowApp(vakiVoice: VakiVoiceManager, viewModel: TaskViewModel = viewMod
                         }
                     }
 
-                    FloatingActionButton(
+                    VakiVoiceButton(
+                        isExpanded = isVoiceExpanded,
                         onClick = { 
-                            showSheet = true
-                            vakiVoice.speak("Hello Aman, I am listening. How can I help you today?")
-                        },
-                        containerColor = Color(0xFFFF9800),
-                        contentColor = Color.White,
-                        shape = CircleShape,
-                        modifier = Modifier.size(64.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Task", modifier = Modifier.size(32.dp))
-                    }
+                            isVoiceExpanded = !isVoiceExpanded
+                            if (isVoiceExpanded) {
+                                vakiVoice.speak("Hello Aman, I am listening. How can I help you today?")
+                            }
+                        }
+                    )
                 }
             }
         ) { paddingValues ->
@@ -151,7 +148,7 @@ fun FocusFlowApp(vakiVoice: VakiVoiceManager, viewModel: TaskViewModel = viewMod
 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                WelcomeHeader()
+                WelcomeHeader(taskCount = totalCount)
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
