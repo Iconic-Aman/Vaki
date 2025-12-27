@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun WelcomeHeader() {
+fun WelcomeHeader(taskCount: Int) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -30,7 +30,7 @@ fun WelcomeHeader() {
                 )
             )
             Text(
-                "You have 4 focus on today",
+                "You have $taskCount focus on today",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = Color.DarkGray,
                     fontWeight = FontWeight.SemiBold

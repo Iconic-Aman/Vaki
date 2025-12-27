@@ -140,7 +140,7 @@ fun FocusFlowApp(viewModel: TaskViewModel = viewModel()) {
 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                WelcomeHeader()
+                WelcomeHeader(taskCount = totalCount)
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
