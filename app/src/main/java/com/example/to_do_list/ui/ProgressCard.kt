@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun ProgressCard(completed: Int, total: Int) {
@@ -21,13 +22,13 @@ fun ProgressCard(completed: Int, total: Int) {
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 10.dp,
-                shape = RoundedCornerShape(24.dp),
-                spotColor = Color(0x4000BCD4)
+                elevation = 12.dp,
+                shape = RoundedCornerShape(28.dp),
+                spotColor = Color(0x20000000)
             ),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.9f)
+            containerColor = Color.White
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -41,13 +42,17 @@ fun ProgressCard(completed: Int, total: Int) {
             ) {
                 Text(
                     "Daily Progress",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.Black,
+                        fontSize = 18.sp
+                    )
                 )
                 Text(
                     "${(progress * 100).toInt()}%",
                     style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4CAF50)
+                        fontWeight = FontWeight.Black,
+                        color = Color(0xFF6C63FF)
                     )
                 )
             }
@@ -56,10 +61,10 @@ fun ProgressCard(completed: Int, total: Int) {
                 progress = { progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
+                    .height(10.dp)
                     .clip(CircleShape),
-                color = Color(0xFF4CAF50),
-                trackColor = Color(0xFFE0E0E0),
+                color = Color(0xFF6C63FF),
+                trackColor = Color(0xFFF0EFFF),
             )
             Spacer(modifier = Modifier.height(12.dp))
             Row(
@@ -68,9 +73,9 @@ fun ProgressCard(completed: Int, total: Int) {
             ) {
                  Text(
                     "$completed Completed | ${total - completed} Remaining",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        color = Color.Gray,
-                        fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Bold
                     )
                 )
             }
