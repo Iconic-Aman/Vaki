@@ -6,7 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,8 +43,9 @@ fun VakiVoiceButton(
                 modifier = Modifier.size(64.dp),
                 contentAlignment = Alignment.Center
             ) {
+                // Using Face icon as a fallback for Mic if extended icons aren't available
                 Icon(
-                    imageVector = Icons.Default.Mic,
+                    imageVector = Icons.Default.Face,
                     contentDescription = "Voice Assistant",
                     tint = Color.White,
                     modifier = Modifier.size(32.dp)
