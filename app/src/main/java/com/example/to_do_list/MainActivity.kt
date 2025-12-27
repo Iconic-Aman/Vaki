@@ -72,6 +72,7 @@ fun FocusFlowApp(viewModel: TaskViewModel = viewModel()) {
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            Spacer(modifier = Modifier.height(32.dp)) // Move title slightly down
             WelcomeHeader()
             Spacer(modifier = Modifier.height(24.dp))
             ProgressCard(completed = completedCount, total = totalCount)
@@ -123,7 +124,7 @@ fun WelcomeHeader() {
     ) {
         Column {
             Text(
-                "Hello, User!",
+                "Good Morning, Aman",
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
             )
             Text(
