@@ -1,9 +1,14 @@
 package com.example.to_do_list
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,9 +21,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.to_do_list.ui.*
 import com.example.to_do_list.ui.theme.VakiTheme
@@ -26,27 +33,71 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private lateinit var vakiVoice: VakiVoiceManager
+    private lateinit var vakiSpeechRecognizer: VakiSpeechRecognizer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         vakiVoice = VakiVoiceManager(this)
+        
         enableEdgeToEdge()
         setContent {
             VakiTheme {
-                FocusFlowApp(vakiVoice)
+                val viewModel: TaskViewModel = viewModel()
+                
+                // Initialize Speech Recognizer
+                vakiSpeechRecognizer = remember {
+                    VakiSpeechRecognizer(
+                        context = this,
+                        onResult = { result ->
+                            Log.d("VakiDebug", "Recognized: $result")
+                            handleVoiceCommand(result, viewModel)
+                        },
+                        onError = { error ->
+                            Log.e("VakiDebug", "Speech Error Code: $error")
+                        }
+                    )
+                }
+
+                FocusFlowApp(vakiVoice, vakiSpeechRecognizer, viewModel)
             }
+        }
+    }
+
+    private fun handleVoiceCommand(command: String, viewModel: TaskViewModel) {
+        val lowerCommand = command.lowercase()
+        Log.d("VakiDebug", "Processing command: $lowerCommand")
+        
+        if (lowerCommand.contains("add task")) {
+            val taskTitle = lowerCommand.replace("add task", "").trim()
+            if (taskTitle.isNotEmpty()) {
+                viewModel.addTask(taskTitle, "Voice")
+                vakiVoice.speak("Got it! I've added $taskTitle to your list.")
+                Log.d("VakiDebug", "Action: Added task '$taskTitle'")
+            } else {
+                vakiVoice.speak("What task would you like me to add?")
+                Log.d("VakiDebug", "Action: Prompted for task title")
+            }
+        } else {
+            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet.")
+            Log.d("VakiDebug", "Action: Unknown command")
         }
     }
 
     override fun onDestroy() {
         vakiVoice.shutDown()
+        vakiSpeechRecognizer.destroy()
         super.onDestroy()
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FocusFlowApp(vakiVoice: VakiVoiceManager, viewModel: TaskViewModel = viewModel()) {
+fun FocusFlowApp(
+    vakiVoice: VakiVoiceManager,
+    vakiSpeechRecognizer: VakiSpeechRecognizer,
+    viewModel: TaskViewModel
+) {
+    val context = LocalContext.current
     var showSheet by remember { mutableStateOf(false) }
     var isVoiceExpanded by remember { mutableStateOf(false) }
     val tasks = viewModel.tasks
@@ -55,6 +106,17 @@ fun FocusFlowApp(vakiVoice: VakiVoiceManager, viewModel: TaskViewModel = viewMod
     
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    // Permission Launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Log.d("VakiDebug", "Microphone permission granted")
+        } else {
+            Log.e("VakiDebug", "Microphone permission denied")
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -94,9 +156,24 @@ fun FocusFlowApp(vakiVoice: VakiVoiceManager, viewModel: TaskViewModel = viewMod
                     VakiVoiceButton(
                         isExpanded = isVoiceExpanded,
                         onClick = { 
+                            // Check permission first
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                return@VakiVoiceButton
+                            }
+
                             isVoiceExpanded = !isVoiceExpanded
                             if (isVoiceExpanded) {
-                                vakiVoice.speak("Hello Aman, I am listening. How can I help you today?")
+                                Log.d("VakiDebug", "Starting Voice Session")
+                                vakiVoice.speak("Hello Aman, I am listening. How can I help you today?") {
+                                    // Start listening only AFTER Vaki finishes greeting
+                                    vakiSpeechRecognizer.startListening()
+                                    Log.d("VakiDebug", "Mic is now LIVE")
+                                }
+                            } else {
+                                Log.d("VakiDebug", "Ending Voice Session")
+                                vakiSpeechRecognizer.stopListening()
+                                isVoiceExpanded = false
                             }
                         }
                     )
