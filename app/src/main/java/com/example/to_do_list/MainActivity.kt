@@ -26,20 +26,28 @@ import com.example.to_do_list.ui.theme.VakiTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private lateinit var vakiVoice: VakiVoiceManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        vakiVoice = VakiVoiceManager(this)
         enableEdgeToEdge()
         setContent {
             VakiTheme {
-                FocusFlowApp()
+                FocusFlowApp(vakiVoice)
             }
         }
+    }
+
+    override fun onDestroy() {
+        vakiVoice.shutDown()
+        super.onDestroy()
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FocusFlowApp(viewModel: TaskViewModel = viewModel()) {
+fun FocusFlowApp(vakiVoice: VakiVoiceManager, viewModel: TaskViewModel = viewModel()) {
     var showSheet by remember { mutableStateOf(false) }
     val tasks = viewModel.tasks
     val completedCount = tasks.count { it.isCompleted }
@@ -84,7 +92,10 @@ fun FocusFlowApp(viewModel: TaskViewModel = viewModel()) {
                     }
 
                     FloatingActionButton(
-                        onClick = { showSheet = true },
+                        onClick = { 
+                            showSheet = true
+                            vakiVoice.speak("Hello Aman, I am listening. How can I help you today?")
+                        },
                         containerColor = Color(0xFFFF9800),
                         contentColor = Color.White,
                         shape = CircleShape,
