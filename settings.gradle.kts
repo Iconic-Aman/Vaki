@@ -19,6 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "To-Do-List"
+rootProject.name = "Vaki"
 include(":app")
- 
