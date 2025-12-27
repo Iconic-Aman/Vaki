@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             VakiTheme {
                 val viewModel: TaskViewModel = viewModel()
+                var isVoiceExpanded by remember { mutableStateOf(false) }
                 
                 // Initialize Speech Recognizer
                 vakiSpeechRecognizer = remember {
@@ -51,7 +52,9 @@ class MainActivity : ComponentActivity() {
                         context = this,
                         onResult = { result ->
                             Log.d("VakiDebug", "Recognized: $result")
-                            handleVoiceCommand(result, viewModel)
+                            handleVoiceCommand(result, viewModel) {
+                                isVoiceExpanded = false
+                            }
                         },
                         onError = { error ->
                             Log.e("VakiDebug", "Speech Error Code: $error")
@@ -59,12 +62,18 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                FocusFlowApp(vakiVoice, vakiSpeechRecognizer, viewModel)
+                FocusFlowApp(
+                    vakiVoice = vakiVoice,
+                    vakiSpeechRecognizer = vakiSpeechRecognizer,
+                    viewModel = viewModel,
+                    isVoiceExpanded = isVoiceExpanded,
+                    onVoiceExpandedChange = { isVoiceExpanded = it }
+                )
             }
         }
     }
 
-    private fun handleVoiceCommand(command: String, viewModel: TaskViewModel) {
+    private fun handleVoiceCommand(command: String, viewModel: TaskViewModel, onComplete: () -> Unit) {
         val lowerCommand = command.lowercase().trim()
         Log.d("VakiDebug", "Processing command: $lowerCommand")
         
@@ -74,18 +83,23 @@ class MainActivity : ComponentActivity() {
             lowerCommand.startsWith("add") -> lowerCommand.removePrefix("add").trim()
             else -> null
         }
+
         if (taskTitle != null) {
             if (taskTitle.isNotEmpty()) {
                 val capitalizedTitle = taskTitle.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
                 viewModel.addTask(capitalizedTitle, "Voice")
-                vakiVoice.speak("Got it! I've added $taskTitle to your list.")
+                vakiVoice.speak("Got it! I've added your task $taskTitle. Thank you!") {
+                    onComplete()
+                }
                 Log.d("VakiDebug", "Action: Added task '$capitalizedTitle'")
             } else {
                 vakiVoice.speak("What task would you like me to add?")
                 Log.d("VakiDebug", "Action: Prompted for task title")
             }
         } else {
-            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet. Try saying Add followed by your task.")
+            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet. Try saying Add followed by your task.") {
+                onComplete()
+            }
             Log.d("VakiDebug", "Action: Unknown command")
         }
     }
@@ -102,11 +116,12 @@ class MainActivity : ComponentActivity() {
 fun FocusFlowApp(
     vakiVoice: VakiVoiceManager,
     vakiSpeechRecognizer: VakiSpeechRecognizer,
-    viewModel: TaskViewModel
+    viewModel: TaskViewModel,
+    isVoiceExpanded: Boolean,
+    onVoiceExpandedChange: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     var showSheet by remember { mutableStateOf(false) }
-    var isVoiceExpanded by remember { mutableStateOf(false) }
     val tasks = viewModel.tasks
     val completedCount = tasks.count { it.isCompleted }
     val totalCount = tasks.size
@@ -169,8 +184,9 @@ fun FocusFlowApp(
                                 return@VakiVoiceButton
                             }
 
-                            isVoiceExpanded = !isVoiceExpanded
-                            if (isVoiceExpanded) {
+                            val nextState = !isVoiceExpanded
+                            onVoiceExpandedChange(nextState)
+                            if (nextState) {
                                 Log.d("VakiDebug", "Starting Voice Session")
                                 vakiVoice.speak("Hello Aman, I am listening. How can I help you today?") {
                                     // Start listening only AFTER Vaki finishes greeting
@@ -180,7 +196,6 @@ fun FocusFlowApp(
                             } else {
                                 Log.d("VakiDebug", "Ending Voice Session")
                                 vakiSpeechRecognizer.stopListening()
-                                isVoiceExpanded = false
                             }
                         }
                     )
