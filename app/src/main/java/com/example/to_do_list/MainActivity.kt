@@ -13,10 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,13 +50,43 @@ fun FocusFlowApp(viewModel: TaskViewModel = viewModel()) {
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showSheet = true },
-                containerColor = Color(0xFF6C63FF),
-                contentColor = Color.White,
-                shape = CircleShape
+            // Floating Pill Buttons and FAB
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Task")
+                // Formatting "Pill" buttons request as small FloatingActionButtons or extended ones
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(end = 4.dp)
+                ) {
+                    ExtendedFloatingActionButton(
+                        onClick = { /* Edit Task Logic - Placeholder */ },
+                        containerColor = Color.White,
+                        contentColor = Color.Black,
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Text("Edit Task", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    ExtendedFloatingActionButton(
+                        onClick = { showSheet = true },
+                        containerColor = Color.White,
+                        contentColor = Color.Black,
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Text("New Task", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                FloatingActionButton(
+                    onClick = { showSheet = true },
+                    containerColor = Color(0xFFFF9800), // Orange FAB
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Task", modifier = Modifier.size(32.dp))
+                }
             }
         }
     ) { padding ->
@@ -67,16 +94,47 @@ fun FocusFlowApp(viewModel: TaskViewModel = viewModel()) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFE3E9F2))
+                    colors = listOf(
+                        Color(0xFFE0F7FA), // Soft Cyan
+                        Color.White,
+                        Color(0xFFF3E5F5)  // Light Purple
+                    )
                 ))
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(32.dp)) // Move title slightly down
+            // Top Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lock, // Or Home
+                    contentDescription = "Lock",
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    tint = Color.Gray
+                )
+                Text(
+                    "Vaki",
+                    modifier = Modifier.align(Alignment.Center),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Black,
+                        fontSize = 24.sp
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            
             WelcomeHeader()
+            
             Spacer(modifier = Modifier.height(24.dp))
+            
             ProgressCard(completed = completedCount, total = totalCount)
+            
             Spacer(modifier = Modifier.height(24.dp))
+            
             Text(
                 "Today's Tasks",
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -86,8 +144,10 @@ fun FocusFlowApp(viewModel: TaskViewModel = viewModel()) {
                 ),
                 modifier = Modifier.padding(start = 8.dp, bottom = 12.dp)
             )
+            
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(tasks, key = { it.id }) { task ->
                     TaskItem(
@@ -122,27 +182,28 @@ fun WelcomeHeader() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                "Good Morning, Aman",
+                "Hello, User!",
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
             )
             Text(
-                "Let's be productive today.",
+                "You have 4 focus on today", // Hardcoded or dynamic could be implemented
                 style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)
             )
         }
         Surface(
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(56.dp),
             shape = CircleShape,
-            color = Color(0xFF6C63FF).copy(alpha = 0.1f)
+            color = Color(0xFFE0F7FA)
         ) {
             Icon(
                 Icons.Default.Person,
                 contentDescription = "Profile",
-                modifier = Modifier.padding(10.dp),
-                tint = Color(0xFF6C63FF)
+                modifier = Modifier.padding(12.dp),
+                tint = Color(0xFF00BCD4)
             )
+            // Ideally an Image goes here
         }
     }
 }
@@ -158,7 +219,7 @@ fun ProgressCard(completed: Int, total: Int) {
             .shadow(
                 elevation = 10.dp,
                 shape = RoundedCornerShape(24.dp),
-                spotColor = Color(0x406C63FF)
+                spotColor = Color(0x4000BCD4)
             ),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
@@ -182,7 +243,7 @@ fun ProgressCard(completed: Int, total: Int) {
                     "${(progress * 100).toInt()}%",
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6C63FF)
+                        color = Color(0xFF4CAF50) // Green
                     )
                 )
             }
@@ -193,14 +254,22 @@ fun ProgressCard(completed: Int, total: Int) {
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(CircleShape),
-                color = Color(0xFF6C63FF),
+                color = Color(0xFF4CAF50), // Green
                 trackColor = Color(0xFFE0E0E0),
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                "$completed of $total tasks completed",
-                style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                 Text(
+                    "$completed Completed | ${total - completed} Remaining",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        color = Color.Gray,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+            }
         }
     }
 }
@@ -208,7 +277,7 @@ fun ProgressCard(completed: Int, total: Int) {
 @Composable
 fun TaskItem(task: Task, onToggle: () -> Unit, onDelete: () -> Unit) {
     val backgroundColor by animateColorAsState(
-        if (task.isCompleted) Color(0xFFF0F4FF) else Color.White, label = "bgColor"
+        if (task.isCompleted) Color(0xFFF1F8E9) else Color.White, label = "bgColor"
     )
     val textColor = if (task.isCompleted) Color.Gray else Color.Black
 
@@ -218,57 +287,87 @@ fun TaskItem(task: Task, onToggle: () -> Unit, onDelete: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Custom Checkbox
+        Box(modifier = Modifier.fillMaxWidth()) {
+            // Category Tag
             Surface(
                 modifier = Modifier
-                    .size(24.dp)
-                    .clickable { onToggle() }
-                    .clip(CircleShape),
-                shape = CircleShape,
-                color = if (task.isCompleted) Color(0xFF6C63FF) else Color.Transparent,
-                border = if (!task.isCompleted) androidx.compose.foundation.BorderStroke(2.dp, Color.Gray) else null
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp),
+                shape = RoundedCornerShape(6.dp),
+                color = getCategoryColor(task.category).copy(alpha = 0.2f)
             ) {
-                if (task.isCompleted) {
+                Text(
+                    text = task.category,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = getCategoryColor(task.category),
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Custom Checkbox
+                Surface(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onToggle() }
+                        .clip(CircleShape),
+                    shape = CircleShape,
+                    color = if (task.isCompleted) Color(0xFF4CAF50) else Color.Transparent,
+                    border = if (!task.isCompleted) androidx.compose.foundation.BorderStroke(2.dp, Color.Gray) else null
+                ) {
+                    if (task.isCompleted) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.padding(4.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = textColor,
+                            textDecoration = if (task.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = task.category,
+                        style = MaterialTheme.typography.labelMedium.copy(color = Color.Gray.copy(alpha=0.0f)) // Hide original text category to not duplicate
+                    )
+                }
+
+                IconButton(onClick = onDelete) {
                     Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.padding(4.dp)
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = Color.LightGray
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = textColor,
-                        textDecoration = if (task.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
-                    )
-                )
-                Text(
-                    text = task.category,
-                    style = MaterialTheme.typography.labelMedium.copy(color = Color.Gray)
-                )
-            }
-
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = Color.LightGray
-                )
-            }
         }
+    }
+}
+
+fun getCategoryColor(category: String): Color {
+    return when(category.lowercase()) {
+        "work" -> Color(0xFF2196F3)
+        "personal" -> Color(0xFFE91E63)
+        "design" -> Color(0xFF9C27B0)
+        else -> Color(0xFFFF9800)
     }
 }
 
@@ -303,7 +402,7 @@ fun AddTaskContent(onAddTask: (String, String) -> Unit) {
         OutlinedTextField(
             value = category,
             onValueChange = { category = it },
-            label = { Text("Category") },
+            label = { Text("Category (e.g., Work, Personal, Design)") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
         )
@@ -319,7 +418,7 @@ fun AddTaskContent(onAddTask: (String, String) -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6C63FF)),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text("Create Task", fontSize = 16.sp)
