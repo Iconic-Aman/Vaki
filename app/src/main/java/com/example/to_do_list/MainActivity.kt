@@ -30,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.to_do_list.ui.*
 import com.example.to_do_list.ui.theme.VakiTheme
 import kotlinx.coroutines.launch
+import java.util.*
 
 class MainActivity : ComponentActivity() {
     private lateinit var vakiVoice: VakiVoiceManager
@@ -64,21 +65,27 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleVoiceCommand(command: String, viewModel: TaskViewModel) {
-        val lowerCommand = command.lowercase()
+        val lowerCommand = command.lowercase().trim()
         Log.d("VakiDebug", "Processing command: $lowerCommand")
         
-        if (lowerCommand.contains("add task")) {
-            val taskTitle = lowerCommand.replace("add task", "").trim()
+        // Flexible parsing for "add" or "add task"
+        val taskTitle = when {
+            lowerCommand.startsWith("add task") -> lowerCommand.removePrefix("add task").trim()
+            lowerCommand.startsWith("add") -> lowerCommand.removePrefix("add").trim()
+            else -> null
+        }
+        if (taskTitle != null) {
             if (taskTitle.isNotEmpty()) {
-                viewModel.addTask(taskTitle, "Voice")
+                val capitalizedTitle = taskTitle.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+                viewModel.addTask(capitalizedTitle, "Voice")
                 vakiVoice.speak("Got it! I've added $taskTitle to your list.")
-                Log.d("VakiDebug", "Action: Added task '$taskTitle'")
+                Log.d("VakiDebug", "Action: Added task '$capitalizedTitle'")
             } else {
                 vakiVoice.speak("What task would you like me to add?")
                 Log.d("VakiDebug", "Action: Prompted for task title")
             }
         } else {
-            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet.")
+            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet. Try saying Add followed by your task.")
             Log.d("VakiDebug", "Action: Unknown command")
         }
     }
