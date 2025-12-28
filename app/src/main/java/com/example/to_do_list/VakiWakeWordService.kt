@@ -47,7 +47,7 @@ class VakiWakeWordService(
             try {
                 Log.d("VakiDebug", "VakiWakeWordService: Starting SpeechService...")
                 // Balanced vocabulary to help the model distinguish words better
-                val vocabulary = "[\"vaki\", \"vakee\", \"vakey\", \"vicky\", \"wakey\", \"bucky\", \"hi\", \"hello\", \"[unk]\"]"
+                val vocabulary = "[\"vaki\", \"vakee\", \"vakey\", \"vicky\", \"wakey\", \"bucky\", \"hi\", \"hello\", \"hey\", \"[unk]\"]"
                 val recognizer = Recognizer(m, 16000.0f, vocabulary)
                 speechService = SpeechService(recognizer, 16000.0f)
                 speechService?.startListening(this)
@@ -67,9 +67,9 @@ class VakiWakeWordService(
         // Possible variations of the name "Vaki"
         val wakeWords = listOf("vaki", "vakee", "vakey", "vicky", "wakey")
         
-        // STRICT ORDER: Trigger ONLY if preceded by "hi" or "hello"
+        // STRICT ORDER: Trigger ONLY if preceded by "hi", "hello", or "hey"
         val isMatch = wakeWords.any { variant ->
-            textValue == "hi $variant" || textValue == "hello $variant"
+            textValue == "hi $variant" || textValue == "hello $variant" || textValue == "hey $variant"
         }
         
         if (isMatch) {
