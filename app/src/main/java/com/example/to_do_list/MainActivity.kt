@@ -160,7 +160,7 @@ class MainActivity : ComponentActivity() {
                 vakiVoice.speak("What task would you like me to add?")
             }
         } else {
-            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet.") {
+            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet. Thank you!") {
                 onComplete()
             }
         }
