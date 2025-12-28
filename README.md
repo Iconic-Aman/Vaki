@@ -10,13 +10,27 @@ Vaki is a modern, high-performance Android productivity application that combine
 
 ## ✨ Features
 
-- **🎙️ Hands-Free Voice Assistant**: Add tasks naturally by speaking (e.g., *"Add task Finish UI design"*).
-- **🤖 Intelligent Feedback**: Custom-voiced assistant (TTS) provides verbal confirmations and polite error handling.
-- **📊 Real-time Progress Tracking**: Dynamic progress card that visualizes your daily accomplishments.
 - **🎨 Premium UI/UX**: Soft gradients, glassmorphism-inspired cards, and high-contrast typography for a gorgeous look.
+- **🎙️ Hands-Free Voice Assistant**: Add tasks naturally by speaking (e.g., *"Add task Finish UI design"*).
+- **📝 Add Task**: Seamlessly manage your to-do list with both voice and manual input.
 - **🔘 Animated Voice Button**: A fluid, expanding mic button that provides visual feedback when Vaki is listening.
-- **📂 Task Categorization**: Automatically categorizes tasks with color-coded tags like "Work", "Personal", and "Coding".
-- **🗺️ Navigation Drawer**: A smooth, 70% width slide-out menu for quick access to Alarms and Notes.
+- **🗺️ Navigation Drawer**: A smooth slide-out menu providing quick access to essential tools like **Set Alarm** and **Add Notes**.
+
+---
+
+## 🚀 Release History
+
+### **v1.1 - The Hands-Free Update (Latest)**
+- **Offline Wake-Word Detection**: Integrated Vosk SDK for "Hi Vaki" wake-word recognition.
+- **Hands-Free Flow**: Automatically triggers greeting and starts listening for commands without touching the phone.
+- **Improved Voice Handoff**: Seamless transition between offline wake-word detection and online high-accuracy speech recognition.
+- **Bug Fixes**: Resolved crashes related to voice timeouts and improved error handling for "No Match" scenarios.
+
+### **v1.0 - Initial Release**
+- Core Premium UI/UX with high-contrast Material 3 components.
+- Standard Voice Assistant integration (Greeting to Command flow).
+- Animated Voice Button with expansion effects.
+- Modern Navigation Drawer with quick access tools.
 
 ---
 
@@ -33,36 +47,29 @@ Vaki is a modern, high-performance Android productivity application that combine
 ### 1. The Welcome Greeting
 Upon opening the app, you'll be greeted by your personalized dashboard showing your current focus count and daily progress.
 
-### 2. Triggering Vaki
-Click the **Mic (Face) Button** at the bottom right. The button will expand smoothly, and Vaki will say: *"Hello Aman, I am listening. How can I help you today?"*
+### 2. Triggering Vaki (Hands-Free)
+Simply say **"Hi Vaki"** clearly. The Voice Button will expand automatically, and Vaki will say: *"Hello Aman, how can I help you today?"*
 
-### 3. Adding a Task
-Wait for Vaki to finish speaking, then say: **"Add task [Your Task Name]"**. 
+### 3. Manual Trigger
+You can also click the **Mic (Face) Button** at any time to start a voice session manually.
+
+### 4. Adding a Task
+Wait for Vaki to finish her greeting, then say: **"Add task [Your Task Name]"**. 
 Vaki will respond: *"Got it! I've added your task [Name]. Thank you!"* and the task will instantly appear in your list.
 
-### 4. Handling Timeouts
-If you don't say anything for 5 seconds, Vaki will proactively say: *"Sorry! I heard nothing. Thank you!"* and reset the button to keep the interface clean.
-
-### 5. Manual Control
-You can always click the **"New Task"** pill button or the **"+"** icon inside the expanded mic button to add tasks manually via a bottom sheet.
+### 5. Handling Timeouts
+If Vaki doesn't hear anything for a few seconds, she will proactively say: *"Sorry! I heard nothing. Thank you!"* and the button will shrink automatically to its circular shape.
 
 ---
 
-## 🛠️ Technical Setup & Release
-
-### Current Version: **v1.0 (Initial Release)**
+## 🛠️ Technical Setup
 
 **Built With:**
 - **Language**: Kotlin 2.0+
 - **UI Framework**: Jetpack Compose (Material 3)
-- **Speech Engine**: `android.speech.RecognizerIntent`
+- **Speech Engines**: `android.speech.RecognizerIntent` (Online) & `Vosk` (Offline Wake-Word)
 - **Voice Engine**: `android.speech.tts.TextToSpeech`
 - **Architecture**: MVVM with ViewModel and State Hoisting
-
-**Installation:**
-1. Download the `vaki-1.0.apk` from the [Releases](https://github.com/your-username/vaki/releases) section.
-2. Ensure "Install from Unknown Sources" is enabled on your Android device.
-3. Grant **Microphone Permission** on the first launch to enable voice features.
 
 ---
 
