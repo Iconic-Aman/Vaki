@@ -46,12 +46,12 @@ class VakiWakeWordService(
         model?.let { m ->
             try {
                 Log.d("VakiDebug", "VakiWakeWordService: Starting SpeechService...")
-                // Expanded vocabulary to include common fillers and misinterpretations
-                val vocabulary = "[\"vaki\", \"hi vaki\", \"hello vaki\", \"vakee\", \"vakey\", \"vicky\", \"wakey\", \"backy\", \"hi\", \"hello\", \"[unread]\"]"
+                // Balanced vocabulary to help the model distinguish words better
+                val vocabulary = "[\"vaki\", \"vakee\", \"vakey\", \"vicky\", \"wakey\", \"bucky\", \"hi\", \"hello\", \"[unk]\"]"
                 val recognizer = Recognizer(m, 16000.0f, vocabulary)
                 speechService = SpeechService(recognizer, 16000.0f)
                 speechService?.startListening(this)
-                Log.d("VakiDebug", "VakiWakeWordService: Listening active with expanded vocabulary")
+                Log.d("VakiDebug", "VakiWakeWordService: Listening active (Strict Order Mode)")
             } catch (e: Exception) {
                 Log.e("VakiDebug", "VakiWakeWordService: Failed to start: ${e.message}")
             }
@@ -60,20 +60,31 @@ class VakiWakeWordService(
 
     override fun onResult(hypothesis: String) {
         Log.d("VakiDebug", "VakiWakeWordService Result: $hypothesis")
-        val text = hypothesis.lowercase()
-        // Broadened matching logic
-        if (text.contains("vaki") || text.contains("vakee") || 
-            text.contains("vakey") || text.contains("vicky") || 
-            text.contains("wakey")) {
-            Log.d("VakiDebug", "VakiWakeWordService: WAKE-WORD MATCH!")
+        
+        // Parsing the "text" field manually from JSON
+        val textValue = hypothesis.substringAfter("\"text\" : \"").substringBefore("\"").lowercase().trim()
+        
+        // Possible variations of the name "Vaki"
+        val wakeWords = listOf("vaki", "vakee", "vakey", "vicky", "wakey")
+        
+        // STRICT ORDER: Trigger ONLY if preceded by "hi" or "hello"
+        val isMatch = wakeWords.any { variant ->
+            textValue == "hi $variant" || textValue == "hello $variant"
+        }
+        
+        if (isMatch) {
+            Log.d("VakiDebug", "VakiWakeWordService: WAKE-WORD MATCH FOUND (Strict Order)!")
             onWakeWordDetected()
+        } else {
+            if (textValue.isNotEmpty()) {
+                Log.d("VakiDebug", "VakiWakeWordService: Ignored non-prefixed command: $textValue")
+            }
         }
     }
 
     override fun onPartialResult(hypothesis: String) {
-        // Only log if it's not empty to see live progress
         if (!hypothesis.contains("\"partial\" : \"\"")) {
-            Log.d("VakiDebug", "VakiWakeWordService Partial: $hypothesis")
+            // Partial results logged for debugging
         }
     }
 
