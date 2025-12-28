@@ -57,11 +57,17 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         onError = { error ->
-                            Log.e("VakiDebug", "Speech Error Code: $error - Resetting UI State")
-                            // Fix: Shrink button IMMEDIATELY so UI doesn't look stuck
-                            isVoiceExpandedState.value = false
-                            // Then try to speak the apology
-                            vakiVoice.speak("Sorry! I heard nothing. Thank you!")
+                            val message = when (error) {
+                                6 -> "Time limit reached"
+                                7 -> "No match found"
+                                else -> "Event $error"
+                            }
+                            Log.d("VakiDebug", "Speech Info: $message - Handling UI cleanup")
+                            
+                            // Speak apology first, then shrink button in callback
+                            vakiVoice.speak("Sorry! I heard nothing. Thank you!") {
+                                isVoiceExpandedState.value = false
+                            }
                         }
                     )
                 }
@@ -81,7 +87,6 @@ class MainActivity : ComponentActivity() {
         val lowerCommand = command.lowercase().trim()
         Log.d("VakiDebug", "Processing command: $lowerCommand")
         
-        // Flexible parsing for "add" or "add task"
         val taskTitle = when {
             lowerCommand.startsWith("add task") -> lowerCommand.removePrefix("add task").trim()
             lowerCommand.startsWith("add") -> lowerCommand.removePrefix("add").trim()
@@ -133,7 +138,6 @@ fun FocusFlowApp(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // Permission Launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -162,7 +166,7 @@ fun FocusFlowApp(
                         modifier = Modifier.padding(end = 4.dp)
                     ) {
                         ExtendedFloatingActionButton(
-                            onClick = { /* Edit Task Logic */ },
+                            onClick = { },
                             containerColor = Color.White,
                             contentColor = Color.Black,
                             modifier = Modifier.height(40.dp)
@@ -182,7 +186,6 @@ fun FocusFlowApp(
                     VakiVoiceButton(
                         isExpanded = isVoiceExpanded,
                         onClick = { 
-                            // Check permission first
                             if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                 return@VakiVoiceButton
@@ -193,13 +196,11 @@ fun FocusFlowApp(
                             if (nextState) {
                                 Log.d("VakiDebug", "Starting Voice Session")
                                 vakiVoice.speak("Hello Aman, I am listening. How can I help you today?") {
-                                    // Start listening only AFTER Vaki finishes greeting
                                     vakiSpeechRecognizer.startListening()
                                     Log.d("VakiDebug", "Mic is now LIVE")
                                 }
                             } else {
                                 Log.d("VakiDebug", "Ending Voice Session")
-                                // Stop everything immediately
                                 vakiVoice.stop()
                                 vakiSpeechRecognizer.stopListening()
                             }
@@ -221,7 +222,6 @@ fun FocusFlowApp(
                     .padding(paddingValues)
                     .padding(16.dp)
             ) {
-                // Top Bar with Menu Button
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
