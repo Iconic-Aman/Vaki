@@ -58,8 +58,10 @@ class MainActivity : ComponentActivity() {
                         },
                         onError = { error ->
                             Log.e("VakiDebug", "Speech Error Code: $error")
-                            // Fix: Ensure the button shrinks on error
-                            isVoiceExpanded = false
+                            // Fix for silent crash/timeout: Shrink button and speak apology
+                            vakiVoice.speak("Sorry! I heard nothing. Thank you!") {
+                                isVoiceExpanded = false
+                            }
                         }
                     )
                 }

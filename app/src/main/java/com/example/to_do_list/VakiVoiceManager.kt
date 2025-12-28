@@ -14,9 +14,13 @@ class VakiVoiceManager(context: Context) : TextToSpeech.OnInitListener {
         tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {}
             override fun onDone(utteranceId: String?) {
+                // When Vaki finishes talking, we trigger the callback
                 onSpeechFinished?.invoke()
+                onSpeechFinished = null // Clear it after use
             }
-            override fun onError(utteranceId: String?) {}
+            override fun onError(utteranceId: String?) {
+                onSpeechFinished = null
+            }
         })
     }
 
@@ -41,6 +45,7 @@ class VakiVoiceManager(context: Context) : TextToSpeech.OnInitListener {
     }
 
     fun stop() {
+        onSpeechFinished = null // Prevent any pending callback from firing
         tts.stop()
     }
 
