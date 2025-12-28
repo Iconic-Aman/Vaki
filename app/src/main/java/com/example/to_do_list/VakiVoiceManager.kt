@@ -14,7 +14,6 @@ class VakiVoiceManager(context: Context) : TextToSpeech.OnInitListener {
         tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {}
             override fun onDone(utteranceId: String?) {
-                // When Vaki finishes talking, we trigger the callback
                 onSpeechFinished?.invoke()
             }
             override fun onError(utteranceId: String?) {}
@@ -35,11 +34,14 @@ class VakiVoiceManager(context: Context) : TextToSpeech.OnInitListener {
     fun speak(text: String, onFinished: (() -> Unit)? = null) {
         if (isReady) {
             onSpeechFinished = onFinished
-            // Adding a unique utterance ID is required for the listener to work
             val params = android.os.Bundle()
             params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "VakiSpeechID")
             tts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "VakiSpeechID")
         }
+    }
+
+    fun stop() {
+        tts.stop()
     }
 
     fun shutDown() {
