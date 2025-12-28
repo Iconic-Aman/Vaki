@@ -81,7 +81,8 @@ class MainActivity : ComponentActivity() {
                 val onWakeWordDetected = {
                     if (!isVoiceExpandedState.value) {
                         isVoiceExpandedState.value = true
-                        vakiVoice.speak("Hello Aman, I am listening. How can I help you today?") {
+                        
+                        vakiVoice.speak("Hello Aman, how can I help you today?") {
                             vakiSpeechRecognizer.startListening()
                         }
                         // Stop Wake-Word while listening for commands
@@ -114,7 +115,8 @@ class MainActivity : ComponentActivity() {
                     onVoiceExpandedChange = { expanded ->
                         isVoiceExpandedState.value = expanded
                         if (expanded) {
-                            vakiVoice.speak("Hello Aman, I am listening. How can I help you today?") {
+                           
+                            vakiVoice.speak("Hello Aman, how can I help you today?") {
                                 vakiSpeechRecognizer.startListening()
                             }
                             wakeWordService?.stop()
