@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             VakiTheme {
                 val viewModel: TaskViewModel = viewModel()
-                var isVoiceExpanded by remember { mutableStateOf(false) }
+                val isVoiceExpandedState = remember { mutableStateOf(false) }
                 
                 // Initialize Speech Recognizer
                 vakiSpeechRecognizer = remember {
@@ -53,15 +53,15 @@ class MainActivity : ComponentActivity() {
                         onResult = { result ->
                             Log.d("VakiDebug", "Recognized: $result")
                             handleVoiceCommand(result, viewModel) {
-                                isVoiceExpanded = false
+                                isVoiceExpandedState.value = false
                             }
                         },
                         onError = { error ->
-                            Log.e("VakiDebug", "Speech Error Code: $error")
-                            // Fix for silent crash/timeout: Shrink button and speak apology
-                            vakiVoice.speak("Sorry! I heard nothing. Thank you!") {
-                                isVoiceExpanded = false
-                            }
+                            Log.e("VakiDebug", "Speech Error Code: $error - Resetting UI State")
+                            // Fix: Shrink button IMMEDIATELY so UI doesn't look stuck
+                            isVoiceExpandedState.value = false
+                            // Then try to speak the apology
+                            vakiVoice.speak("Sorry! I heard nothing. Thank you!")
                         }
                     )
                 }
@@ -70,8 +70,8 @@ class MainActivity : ComponentActivity() {
                     vakiVoice = vakiVoice,
                     vakiSpeechRecognizer = vakiSpeechRecognizer,
                     viewModel = viewModel,
-                    isVoiceExpanded = isVoiceExpanded,
-                    onVoiceExpandedChange = { isVoiceExpanded = it }
+                    isVoiceExpanded = isVoiceExpandedState.value,
+                    onVoiceExpandedChange = { isVoiceExpandedState.value = it }
                 )
             }
         }
