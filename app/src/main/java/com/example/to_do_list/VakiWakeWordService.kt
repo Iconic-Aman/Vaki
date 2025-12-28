@@ -15,57 +15,84 @@ class VakiWakeWordService(
 
     private var speechService: SpeechService? = null
     private var model: Model? = null
+    private var isInitializing = false
 
     init {
-        // Vosk StorageService.unpack expects the source path in assets and the target path in internal storage.
-        // It looks for a folder in assets, and tries to copy it.
-        // The error "model-en-Ind/uuid" suggests it's trying to find a 'uuid' file inside the unzipped folder to verify it.
-        Log.d("VakiDebug", "Vosk: Unpacking model from assets...")
+        initModel()
+    }
+
+    private fun initModel() {
+        if (isInitializing) return
+        isInitializing = true
+        Log.d("VakiDebug", "VakiWakeWordService: Unpacking model...")
+        
         StorageService.unpack(context, "model-en-Ind", "vosk-model",
-            { model: Model ->
-                this.model = model
-                Log.d("VakiDebug", "Vosk: Model unpacked successfully")
+            { m: Model ->
+                this.model = m
+                isInitializing = false
+                Log.d("VakiDebug", "VakiWakeWordService: Model Ready")
                 start()
             },
-            { error -> 
-                Log.e("VakiDebug", "Vosk: Model failed to load: ${error.message}") 
+            { exception: Exception -> 
+                isInitializing = false
+                Log.e("VakiDebug", "VakiWakeWordService: Model Load Error: ${exception.message}") 
             }
         )
     }
 
     fun start() {
-        model?.let {
-            Log.d("VakiDebug", "Vosk Wake-Word Service: Starting...")
+        if (speechService != null) return // Already running
+        
+        model?.let { m ->
             try {
-                // Ensure the sample rate matches what the model expects (usually 16000)
-                val recognizer = Recognizer(it, 16000.0f, "[\"vaki\", \"hi vaki\", \"vakee\", \"vakey\", \"[unread]\"]")
+                Log.d("VakiDebug", "VakiWakeWordService: Starting SpeechService...")
+                // Vocabulary optimization for "Vaki"
+                val recognizer = Recognizer(m, 16000.0f, "[\"vaki\", \"hi vaki\", \"vakee\", \"vakey\", \"[unread]\"]")
                 speechService = SpeechService(recognizer, 16000.0f)
                 speechService?.startListening(this)
-                Log.d("VakiDebug", "Vosk Wake-Word Service: Ready and listening for 'Vaki'")
+                Log.d("VakiDebug", "VakiWakeWordService: Listening active")
             } catch (e: Exception) {
-                Log.e("VakiDebug", "Vosk Recognizer failed to start: ${e.message}")
+                Log.e("VakiDebug", "VakiWakeWordService: Failed to start: ${e.message}")
             }
-        }
+        } ?: Log.e("VakiDebug", "VakiWakeWordService: Cannot start, model not loaded")
     }
 
     override fun onResult(hypothesis: String) {
-        Log.d("VakiDebug", "Vosk Hypothesis: $hypothesis")
-        if (hypothesis.contains("vaki") || hypothesis.contains("vakee") || hypothesis.contains("vakey")) {
-            Log.d("VakiDebug", "Wake-word detected!")
+        Log.d("VakiDebug", "VakiWakeWordService Result: $hypothesis")
+        // Hypothesis comes as JSON like {"text" : "vaki"}
+        if (hypothesis.lowercase().contains("vaki") || 
+            hypothesis.lowercase().contains("vakee") || 
+            hypothesis.lowercase().contains("vakey")) {
+            Log.d("VakiDebug", "VakiWakeWordService: MATCH FOUND!")
             onWakeWordDetected()
         }
     }
 
-    override fun onPartialResult(hypothesis: String?) { }
-    override fun onFinalResult(hypothesis: String?) { }
-    override fun onError(exception: Exception?) {
-        Log.e("VakiDebug", "Vosk Error: ${exception?.message}")
+    override fun onPartialResult(hypothesis: String) {
+        // Log partials to see if it's picking up sound at all
+        if (hypothesis.length > 15) { // Only log if it actually contains text
+            Log.d("VakiDebug", "VakiWakeWordService Partial: $hypothesis")
+        }
     }
-    override fun onTimeout() { }
+
+    override fun onFinalResult(hypothesis: String) {
+        Log.d("VakiDebug", "VakiWakeWordService Final: $hypothesis")
+    }
+
+    override fun onError(exception: Exception) {
+        Log.e("VakiDebug", "VakiWakeWordService Error: ${exception.message}")
+    }
+
+    override fun onTimeout() {
+        Log.d("VakiDebug", "VakiWakeWordService Timeout")
+    }
 
     fun stop() {
-        speechService?.stop()
-        speechService?.shutdown()
-        Log.d("VakiDebug", "Vosk Wake-Word Service: Stopped")
+        Log.d("VakiDebug", "VakiWakeWordService: Stopping service...")
+        speechService?.let {
+            it.stop()
+            it.shutdown()
+            speechService = null
+        }
     }
 }

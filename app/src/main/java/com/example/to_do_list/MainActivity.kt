@@ -35,6 +35,7 @@ import java.util.*
 class MainActivity : ComponentActivity() {
     private lateinit var vakiVoice: VakiVoiceManager
     private lateinit var vakiSpeechRecognizer: VakiSpeechRecognizer
+    private var wakeWordService: VakiWakeWordService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +46,7 @@ class MainActivity : ComponentActivity() {
             VakiTheme {
                 val viewModel: TaskViewModel = viewModel()
                 val isVoiceExpandedState = remember { mutableStateOf(false) }
+                val context = LocalContext.current
                 
                 // Initialize Speech Recognizer
                 vakiSpeechRecognizer = remember {
@@ -54,6 +56,8 @@ class MainActivity : ComponentActivity() {
                             Log.d("VakiDebug", "Recognized: $result")
                             handleVoiceCommand(result, viewModel) {
                                 isVoiceExpandedState.value = false
+                                // Restart Wake-Word after command
+                                wakeWordService?.start()
                             }
                         },
                         onError = { error ->
@@ -64,12 +68,42 @@ class MainActivity : ComponentActivity() {
                             }
                             Log.d("VakiDebug", "Speech Info: $message - Handling UI cleanup")
                             
-                            // Speak apology first, then shrink button in callback
                             vakiVoice.speak("Sorry! I heard nothing. Thank you!") {
                                 isVoiceExpandedState.value = false
+                                // Restart Wake-Word after error
+                                wakeWordService?.start()
                             }
                         }
                     )
+                }
+
+                // Wake-Word Detection Logic
+                val onWakeWordDetected = {
+                    if (!isVoiceExpandedState.value) {
+                        isVoiceExpandedState.value = true
+                        vakiVoice.speak("Hello Aman, I am listening. How can I help you today?") {
+                            vakiSpeechRecognizer.startListening()
+                        }
+                        // Stop Wake-Word while listening for commands
+                        wakeWordService?.stop()
+                    }
+                }
+
+                // Permission Launcher
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { isGranted ->
+                    if (isGranted) {
+                        Log.d("VakiDebug", "Microphone permission granted")
+                        initWakeWord(onWakeWordDetected)
+                    }
+                }
+
+                // Check permission and init wake-word on start
+                LaunchedEffect(Unit) {
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        initWakeWord(onWakeWordDetected)
+                    }
                 }
 
                 FocusFlowApp(
@@ -77,9 +111,29 @@ class MainActivity : ComponentActivity() {
                     vakiSpeechRecognizer = vakiSpeechRecognizer,
                     viewModel = viewModel,
                     isVoiceExpanded = isVoiceExpandedState.value,
-                    onVoiceExpandedChange = { isVoiceExpandedState.value = it }
+                    onVoiceExpandedChange = { expanded ->
+                        isVoiceExpandedState.value = expanded
+                        if (expanded) {
+                            vakiVoice.speak("Hello Aman, I am listening. How can I help you today?") {
+                                vakiSpeechRecognizer.startListening()
+                            }
+                            wakeWordService?.stop()
+                        } else {
+                            vakiVoice.stop()
+                            vakiSpeechRecognizer.stopListening()
+                            wakeWordService?.start()
+                        }
+                    },
+                    onPermissionRequest = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
                 )
             }
+        }
+    }
+
+    private fun initWakeWord(onWake: () -> Unit) {
+        if (wakeWordService == null) {
+            Log.d("VakiDebug", "Initializing WakeWordService...")
+            wakeWordService = VakiWakeWordService(this, onWake)
         }
     }
 
@@ -100,22 +154,20 @@ class MainActivity : ComponentActivity() {
                 vakiVoice.speak("Got it! I've added your task $taskTitle. Thank you!") {
                     onComplete()
                 }
-                Log.d("VakiDebug", "Action: Added task '$capitalizedTitle'")
             } else {
                 vakiVoice.speak("What task would you like me to add?")
-                Log.d("VakiDebug", "Action: Prompted for task title")
             }
         } else {
-            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet. Try saying Add followed by your task.") {
+            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet.") {
                 onComplete()
             }
-            Log.d("VakiDebug", "Action: Unknown command")
         }
     }
 
     override fun onDestroy() {
         vakiVoice.shutDown()
         vakiSpeechRecognizer.destroy()
+        wakeWordService?.stop()
         super.onDestroy()
     }
 }
@@ -127,7 +179,8 @@ fun FocusFlowApp(
     vakiSpeechRecognizer: VakiSpeechRecognizer,
     viewModel: TaskViewModel,
     isVoiceExpanded: Boolean,
-    onVoiceExpandedChange: (Boolean) -> Unit
+    onVoiceExpandedChange: (Boolean) -> Unit,
+    onPermissionRequest: () -> Unit
 ) {
     val context = LocalContext.current
     var showSheet by remember { mutableStateOf(false) }
@@ -137,16 +190,6 @@ fun FocusFlowApp(
     
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            Log.d("VakiDebug", "Microphone permission granted")
-        } else {
-            Log.e("VakiDebug", "Microphone permission denied")
-        }
-    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -187,23 +230,10 @@ fun FocusFlowApp(
                         isExpanded = isVoiceExpanded,
                         onClick = { 
                             if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                onPermissionRequest()
                                 return@VakiVoiceButton
                             }
-
-                            val nextState = !isVoiceExpanded
-                            onVoiceExpandedChange(nextState)
-                            if (nextState) {
-                                Log.d("VakiDebug", "Starting Voice Session")
-                                vakiVoice.speak("Hello Aman, I am listening. How can I help you today?") {
-                                    vakiSpeechRecognizer.startListening()
-                                    Log.d("VakiDebug", "Mic is now LIVE")
-                                }
-                            } else {
-                                Log.d("VakiDebug", "Ending Voice Session")
-                                vakiVoice.stop()
-                                vakiSpeechRecognizer.stopListening()
-                            }
+                            onVoiceExpandedChange(!isVoiceExpanded)
                         }
                     )
                 }
