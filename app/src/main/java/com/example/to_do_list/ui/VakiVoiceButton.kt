@@ -53,7 +53,7 @@ fun VakiVoiceButton(
             }
             if (isExpanded) {
                 Text(
-                    text = "Vaki is listening...",
+                    text = "Listening...",
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
