@@ -59,7 +59,7 @@ class VakiWakeWordService : Service(), RecognitionListener {
                 this.model = m
                 isInitializing = false
                 Log.d("VakiDebug", "VakiWakeWordService: Model Ready")
-                startListening()
+                start()
             },
             { exception: Exception -> 
                 isInitializing = false
@@ -68,7 +68,7 @@ class VakiWakeWordService : Service(), RecognitionListener {
         )
     }
 
-    fun startListening() {
+    fun start() {
         if (speechService != null) return
         
         model?.let { m ->
@@ -85,7 +85,7 @@ class VakiWakeWordService : Service(), RecognitionListener {
         } ?: Log.e("VakiDebug", "VakiWakeWordService: Cannot start, model not loaded")
     }
 
-    fun stopListening() {
+    fun stop() {
         Log.d("VakiDebug", "VakiWakeWordService: Stopping service...")
         speechService?.let {
             it.stop()
@@ -137,7 +137,7 @@ class VakiWakeWordService : Service(), RecognitionListener {
     }
 
     override fun onDestroy() {
-        stopListening()
+        stop()
         super.onDestroy()
     }
 }
