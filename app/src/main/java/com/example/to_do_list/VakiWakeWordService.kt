@@ -131,8 +131,8 @@ class VakiWakeWordService : Service(), RecognitionListener {
     private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, "VakiWakeWordChannel")
             .setContentTitle("Vaki is Listening")
-            .setContentText("Hands-free wake word is active")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
 
