@@ -31,11 +31,13 @@ class TaskAIService {
         val key = com.example.to_do_list.network.OpenRouterConfig.getActiveKey()
         Log.d("VakiDebug", "LLM Processing: '$voskText' | KeyPresent: ${key.isNotEmpty()} (Len: ${key.length})")
         
-        // precise free models
+        // Ultra-lightweight free models (1B - 3B params) for speed and rate-limit avoidance
         val fallbackModels = listOf(
-            "google/gemini-2.0-flash-exp:free",
-            "meta-llama/llama-3.2-3b-instruct:free",
-            "mistralai/mistral-7b-instruct:free"
+            "meta-llama/llama-3.2-1b-instruct:free", // ~1B params (Tiny & Fast)
+            "google/gemini-2.0-flash-exp:free",      // Extremely efficient
+            "meta-llama/llama-3.2-3b-instruct:free", // ~3B params
+            "microsoft/phi-3-mini-128k-instruct:free", // ~3.8B params
+            "huggingfaceh4/zephyr-7b-beta:free"
         )
 
         // Context variables
@@ -92,8 +94,13 @@ class TaskAIService {
                 Log.d("VakiDebug", "LLM Response: $content")
                 content
             } else {
-                val errorBody = response.errorBody()?.string() ?: "No error body"
-                Log.e("VakiDebug", "LLM API Error: ${response.code()} - $errorBody")
+                val code = response.code()
+                if (code == 429) {
+                    Log.w("VakiDebug", "LLM Rate Limit Reached (429). Falling back to VakiBrain.")
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "No error body"
+                    Log.e("VakiDebug", "LLM API Error: $code - $errorBody")
+                }
                 null // Trigger fallback
             }
         } catch (e: Exception) {
