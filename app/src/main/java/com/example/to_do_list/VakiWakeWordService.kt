@@ -98,7 +98,6 @@ class VakiWakeWordService : Service(), RecognitionListener {
         Log.d("VakiDebug", "VakiWakeWordService Result: $hypothesis")
         val textValue = hypothesis.substringAfter("\"text\" : \"").substringBefore("\"").lowercase().trim()
         val wakeWords = listOf("vaki", "vakee", "vakey", "vicky", "wakey")
-        
         val isMatch = wakeWords.any { variant ->
             textValue == "hi $variant" || textValue == "hello $variant" || textValue == "hey $variant"
         }

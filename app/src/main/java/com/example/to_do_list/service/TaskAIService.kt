@@ -38,9 +38,20 @@ class TaskAIService {
             "mistralai/mistral-7b-instruct:free"
         )
 
+        // Context variables
+        val sdf = java.text.SimpleDateFormat("EEEE, dd MMMM yyyy, h:mm a", java.util.Locale.getDefault())
+        val currentTime = sdf.format(java.util.Date())
+
         // Strict prompt to ensure output matches VakiBrain's expected intents if possible
         val prompt = """
-            You are a task manager voice assistant. The user said: "$voskText". 
+            You are a task manager voice assistant.
+            
+            Context:
+            - Current Time: $currentTime
+            - User Location: India (IST)
+            - User Name: Aman
+            
+            The user said: "$voskText". 
             
             Analyze the intent strictly. you will reply the user based on their question , if they ask about task then you'll follow TASK_RULES below 
             
