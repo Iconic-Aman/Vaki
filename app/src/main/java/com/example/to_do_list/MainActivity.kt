@@ -187,6 +187,7 @@ class MainActivity : ComponentActivity() {
                         val text = aiResponse.substringAfter("answer").trim()
                         if (text.isNotEmpty()) VakiIntent.Speak(text) else null
                     }
+                    lowerResponse.contains("stop") -> VakiIntent.Finish
                     else -> null // Unknown or failed parse
                 }
             }
@@ -203,7 +204,10 @@ class MainActivity : ComponentActivity() {
             when (intent) {
                  is VakiIntent.AddTask -> {
                     viewModel.addTask(intent.title, "Voice")
-                    vakiVoice.speak("Got it! I've added ${intent.title} to your list.") { onComplete() }
+                    // CONTINUOUS MODE: Ask for more, restart listening, DO NOT call onComplete yet.
+                    vakiVoice.speak("Added ${intent.title}. Anything else?") {
+                        vakiSpeechRecognizer.startListening()
+                    }
                 }
                 is VakiIntent.DeleteTask -> {
                     val taskToDelete = viewModel.tasks.find { it.title.lowercase().contains(intent.title.lowercase()) }
@@ -231,7 +235,15 @@ class MainActivity : ComponentActivity() {
                 }
                 is VakiIntent.Unknown -> {
                     // Provide a more helpful error message suggesting network check
-                    vakiVoice.speak("I didn't catch that. Please check your network connection.") { onComplete() }
+                    vakiVoice.speak("I heard you say ${intent.rawText}, but I didn't catch that. If you're asking something complex, please check your network connection.") { onComplete() }
+                }
+                is VakiIntent.Finish -> {
+                    val taskList = viewModel.tasks.joinToString(", ") { it.title }
+                    if (taskList.isNotEmpty()) {
+                        vakiVoice.speak("Okay. You now have: $taskList. Thank you!") { onComplete() }
+                    } else {
+                        vakiVoice.speak("Okay, stopping now. Thank you!") { onComplete() }
+                    }
                 }
             }
         }

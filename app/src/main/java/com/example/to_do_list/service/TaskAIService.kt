@@ -62,12 +62,15 @@ class TaskAIService {
             4. If they want to LIST tasks, reply ONLY with: i have LIST tasks
             5. If the user asks about time, weather, general knowledge, or random chat: reply with: answer [response], thank you.
             6. If you are unable to answer or don't know: reply with: answer Sorry, I don't know that.
+            7. If the user says "No", "Stop", "That's all", "Done": reply ONLY with: STOP
             
             Examples:   
             - "Buy milk" -> i have added task Buy milk
             - "Remove milk" -> i have deleted task milk
             - "How many tasks?" -> you have total COUNT tasks
             - "What do I have to do?" -> i have LIST tasks
+            - "That's all" -> STOP
+            - "No thanks" -> STOP
             - "What is the time?" -> answer It is currently 5 PM, thank you.
             - "Who is the president?" -> answer The president is [Name], thank you.
             - "Hello" -> answer Hello there! How can I help?

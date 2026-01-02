@@ -6,6 +6,7 @@ sealed class VakiIntent {
     object CountTasks : VakiIntent()
     object ListTasks : VakiIntent()
     data class Speak(val response: String) : VakiIntent()
+    object Finish : VakiIntent()
     data class Unknown(val rawText: String) : VakiIntent()
 }
 
@@ -42,6 +43,11 @@ class VakiBrain {
         // Check for List Tasks
         VakiNLPPatterns.LIST_PATTERNS.forEach { pattern ->
             if (pattern.containsMatchIn(lowerText)) return VakiIntent.ListTasks
+        }
+
+        // Check for Stop/Finish
+        VakiNLPPatterns.STOP_PATTERNS.forEach { pattern ->
+            if (pattern.matches(lowerText)) return VakiIntent.Finish
         }
 
         return VakiIntent.Unknown(text)

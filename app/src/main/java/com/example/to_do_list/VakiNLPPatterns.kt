@@ -47,4 +47,15 @@ object VakiNLPPatterns {
         Regex("(?i).*status of my (?:day|list|tasks?)"),
         Regex("(?i).*how many things to do")
     )
+
+    // Patterns for stopping conversation
+    val STOP_PATTERNS = listOf(
+        Regex("(?i)^(?:no|nope|nah)(?:.*)?"),
+        Regex("(?i).*(?:that's|thats) (?:all|it|everything)"),
+        Regex("(?i)^stop$"),
+        Regex("(?i).*(?:i'm|i am) done"),
+        Regex("(?i)^done$"),
+        Regex("(?i)^cancel$"),
+        Regex("(?i)^nothing else$")
+    )
 }
