@@ -94,8 +94,13 @@ class TaskAIService {
                 null // Trigger fallback
             }
         } catch (e: Exception) {
-            Log.e("VakiDebug", "LLM Exception: ${e.javaClass.simpleName} - ${e.localizedMessage}")
-            e.printStackTrace()
+            // Suppress network errors for offline mode
+            if (e is java.net.UnknownHostException || e is java.io.IOException) {
+                Log.d("VakiDebug", "LLM Network unavailable (Offline): Falling back to VakiBrain.")
+            } else {
+                Log.e("VakiDebug", "LLM Exception: ${e.javaClass.simpleName} - ${e.localizedMessage}")
+                e.printStackTrace()
+            }
             null // Trigger fallback
         }
     }
