@@ -28,7 +28,8 @@ class TaskAIService {
     private val api = retrofit.create(OpenRouterApi::class.java)
 
     suspend fun processVoskTask(voskText: String): String? {
-        Log.d("TaskAIService", "Processing with LLM: $voskText")
+        val key = com.example.to_do_list.network.OpenRouterConfig.getActiveKey()
+        Log.d("VakiDebug", "LLM Processing: '$voskText' | KeyPresent: ${key.isNotEmpty()} (Len: ${key.length})")
         
         // precise free models
         val fallbackModels = listOf(
@@ -37,9 +38,7 @@ class TaskAIService {
             "mistralai/mistral-7b-instruct:free"
         )
 
-        // Strict prompt to ensure output matches VakiBrain's expected intents if possible, 
-        // OR we can just return raw "ADD <task>" and let the caller handle it.
-        // The plan says: "If they want to add a task, reply with: ADD [task name]."
+        // Strict prompt to ensure output matches VakiBrain's expected intents if possible
         val prompt = """
             You are a task manager voice assistant. The user said: "$voskText". 
             
@@ -59,28 +58,21 @@ class TaskAIService {
         )
 
         return try {
+            Log.d("VakiDebug", "LLM: Sending request to OpenRouter...")
             val response = api.getCompletion(request = request)
             
             if (response.isSuccessful) {
                 val content = response.body()?.choices?.firstOrNull()?.message?.content?.trim()
-                Log.d("TaskAIService", "LLM Response: $content")
-                
-                // If LLM explicitly says UNKNOWN, we might want to return null to let local regex try 
-                // (though regex is likely simpler, so LLM should be smarter). 
-                // Actually, if LLM fails to understand, VakiBrain (regex) definitely won't understand complex stuff.
-                // But VakiBrain is the fallback for *Technical* failures mostly.
-                // However, user said "fallback... if we're offline".
-                // So if LLM returns "UNKNOWN", it means it worked but didn't match. 
-                // We should probably return "UNKNOWN" string or null?
-                // VakiBrain returns VakiIntent.Unknown.
-                // Let's return the content string.
+                Log.d("VakiDebug", "LLM Response: $content")
                 content
             } else {
-                Log.e("TaskAIService", "API Error: ${response.code()}")
+                val errorBody = response.errorBody()?.string() ?: "No error body"
+                Log.e("VakiDebug", "LLM API Error: ${response.code()} - $errorBody")
                 null // Trigger fallback
             }
         } catch (e: Exception) {
-            Log.e("TaskAIService", "Network/Exception: ${e.localizedMessage}")
+            Log.e("VakiDebug", "LLM Exception: ${e.javaClass.simpleName} - ${e.localizedMessage}")
+            e.printStackTrace()
             null // Trigger fallback
         }
     }
