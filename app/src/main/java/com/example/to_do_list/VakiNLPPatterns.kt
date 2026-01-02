@@ -26,23 +26,25 @@ object VakiNLPPatterns {
 
     // Patterns for listing tasks
     val LIST_PATTERNS = listOf(
-        Regex("(?i).*(?:can you |could you |please )?(?:read|list|show|tell me|display)(?: all)?(?: my| the)? (?:tasks|list|to-do|items)"),
+        Regex("(?i).*(?:can you |could you |please )?(?:read|list|show|tell me|display|recite)(?: all)?(?: of)?(?: my| the)? (?:tasks?|list|to-?do ?(?:list)?|items?|plans?|agenda|schedule)"),
         Regex("(?i).*(?:would you mind |could you )reading my (?:list|tasks)"),
-        Regex("(?i).*what(?: are|'s| is) (?:on|in)(?: my| the)? (?:list|tasks|to-do)"),
-        Regex("(?i).*what do i (?:have to do|need to do|got going on)"),
-        Regex("(?i).*(?:check|open|view|see) (?:my|the)? (?:list|tasks|to-do)"),
+        Regex("(?i).*what(?: are|'s| is) (?:on|in)(?: my| the)? (?:list|tasks?|to-?do|schedule)"),
+        Regex("(?i).*what do i (?:have|have to do|need to do|got going on)(?: today)?"),
+        Regex("(?i).*(?:check|open|view|see) (?:my|the)? (?:list|tasks?|to-?do)"),
         Regex("(?i).*(?:read|tell me) everything"),
-        Regex("(?i)^list$"),
-        Regex("(?i)^read$")
+        Regex("(?i)^list(?:.*tasks?)?$"),
+        Regex("(?i)^read(?:.*tasks?)?$"),
+        Regex("(?i)^show(?:.*tasks?)?$"),
+        Regex("(?i).*what (?:tasks?|plans?) (?:do )?i have")
     )
 
     // Patterns for counting tasks
     val COUNT_PATTERNS = listOf(
-        Regex("(?i).*(?:can you |could you |please )?(?:tell me |give me )?how many tasks (?:do i have|are there|left|remaining)"),
-        Regex("(?i).*(?:count|total|summary)(?: of| for)?(?: my| the)? (?:tasks|list|work)"),
+        Regex("(?i).*(?:can you |could you |please )?(?:tell me |give me )?how many (?:tasks?|items?|things?) (?:do i have|are there|left|remaining|on the list)"),
+        Regex("(?i).*(?:count|total|summary)(?: of| for)?(?: my| the)? (?:tasks?|list|work|items?)"),
         Regex("(?i).*how much (?:work|stuff|things) (?:is|are) (?:left|pending)"),
         Regex("(?i).*(?:give me|tell me|what is) the (?:total|count)"),
-        Regex("(?i).*status of my day"),
+        Regex("(?i).*status of my (?:day|list|tasks?)"),
         Regex("(?i).*how many things to do")
     )
 }
