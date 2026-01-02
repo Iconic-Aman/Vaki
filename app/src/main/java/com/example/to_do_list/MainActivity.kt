@@ -40,6 +40,7 @@ import java.util.*
 class MainActivity : ComponentActivity() {
     private lateinit var vakiVoice: VakiVoiceManager
     private lateinit var vakiSpeechRecognizer: VakiSpeechRecognizer
+    private val vakiBrain = VakiBrain()
     private var wakeWordService: VakiWakeWordService? = null
     private var isBound = false
 
@@ -50,7 +51,6 @@ class MainActivity : ComponentActivity() {
             isBound = true
             Log.d("VakiDebug", "MainActivity: Bound to WakeWordService")
             
-            // Set the listener after binding
             wakeWordService?.setWakeWordListener {
                 runOnUiThread {
                     onWakeWordDetectedTrigger?.invoke()
@@ -77,7 +77,6 @@ class MainActivity : ComponentActivity() {
                 val isVoiceExpandedState = remember { mutableStateOf(false) }
                 val context = LocalContext.current
                 
-                // Initialize Speech Recognizer
                 vakiSpeechRecognizer = remember {
                     VakiSpeechRecognizer(
                         context = this,
@@ -85,29 +84,25 @@ class MainActivity : ComponentActivity() {
                             Log.d("VakiDebug", "Recognized: $result")
                             handleVoiceCommand(result, viewModel) {
                                 isVoiceExpandedState.value = false
-                                // Restart Wake-Word after command
-                                wakeWordService?.start() 
+                                wakeWordService?.start()
                             }
                         },
                         onError = { error ->
                             Log.d("VakiDebug", "Speech Info: $error - Handling UI cleanup")
                             vakiVoice.speak("Sorry! I heard nothing. Thank you!") {
                                 isVoiceExpandedState.value = false
-                                // Restart Wake-Word after error
                                 wakeWordService?.start()
                             }
                         }
                     )
                 }
 
-                // Set the global trigger for the bound service
                 onWakeWordDetectedTrigger = {
                     if (!isVoiceExpandedState.value) {
                         isVoiceExpandedState.value = true
                         vakiVoice.speak("Hello Aman, how can I help you today?") {
                             vakiSpeechRecognizer.startListening()
                         }
-                        // Stop Wake-Word while listening for commands
                         wakeWordService?.stop()
                     }
                 }
@@ -121,7 +116,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Check permission and init wake-word on start
                 LaunchedEffect(Unit) {
                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                         startAndBindWakeWordService()
@@ -165,24 +159,37 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleVoiceCommand(command: String, viewModel: TaskViewModel, onComplete: () -> Unit) {
-        val lowerCommand = command.lowercase().trim()
-        Log.d("VakiDebug", "Processing command: $lowerCommand")
-        
-        val taskTitle = when {
-            lowerCommand.startsWith("add task") -> lowerCommand.removePrefix("add task").trim()
-            lowerCommand.startsWith("add") -> lowerCommand.removePrefix("add").trim()
-            else -> null
-        }
+        val intent = vakiBrain.parse(command)
+        Log.d("VakiDebug", "Intent detected: $intent")
 
-        if (taskTitle != null && taskTitle.isNotEmpty()) {
-            val capitalizedTitle = taskTitle.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-            viewModel.addTask(capitalizedTitle, "Voice")
-            vakiVoice.speak("Got it! I've added your task $taskTitle. Thank you!") {
-                onComplete()
+        when (intent) {
+            is VakiIntent.AddTask -> {
+                viewModel.addTask(intent.title, "Voice")
+                vakiVoice.speak("Got it! I've added ${intent.title} to your list.") { onComplete() }
             }
-        } else {
-            vakiVoice.speak("I heard you say $command, but I'm not sure how to do that yet.") {
-                onComplete()
+            is VakiIntent.DeleteTask -> {
+                val taskToDelete = viewModel.tasks.find { it.title.lowercase().contains(intent.title.lowercase()) }
+                if (taskToDelete != null) {
+                    viewModel.removeTask(taskToDelete)
+                    vakiVoice.speak("I've removed the task ${taskToDelete.title} for you.") { onComplete() }
+                } else {
+                    vakiVoice.speak("I couldn't find a task named ${intent.title} in your list.") { onComplete() }
+                }
+            }
+            is VakiIntent.CountTasks -> {
+                val count = viewModel.tasks.size
+                vakiVoice.speak("You have $count tasks in total, Aman.") { onComplete() }
+            }
+            is VakiIntent.ListTasks -> {
+                val taskList = viewModel.tasks.joinToString(", ") { it.title }
+                if (taskList.isNotEmpty()) {
+                    vakiVoice.speak("Your tasks are: $taskList.") { onComplete() }
+                } else {
+                    vakiVoice.speak("Your task list is currently empty.") { onComplete() }
+                }
+            }
+            is VakiIntent.Unknown -> {
+                vakiVoice.speak("I heard you say ${intent.rawText}, but I'm not sure how to help with that yet.") { onComplete() }
             }
         }
     }
@@ -194,6 +201,7 @@ class MainActivity : ComponentActivity() {
         }
         vakiVoice.shutDown()
         vakiSpeechRecognizer.destroy()
+        wakeWordService?.stop()
         super.onDestroy()
     }
 }
@@ -294,50 +302,27 @@ fun FocusFlowApp(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                
                 WelcomeHeader(taskCount = totalCount)
-                
                 Spacer(modifier = Modifier.height(24.dp))
-                
                 ProgressCard(completed = completedCount, total = totalCount)
-                
                 Spacer(modifier = Modifier.height(24.dp))
-                
                 Text(
                     "Today's Tasks",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = Color.DarkGray
-                    ),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.DarkGray),
                     modifier = Modifier.padding(start = 8.dp, bottom = 12.dp)
                 )
-                
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
                     items(tasks, key = { it.id }) { task ->
-                        TaskItem(
-                            task = task,
-                            onToggle = { viewModel.toggleTaskCompletion(task) },
-                            onDelete = { viewModel.removeTask(task) }
-                        )
+                        TaskItem(task = task, onToggle = { viewModel.toggleTaskCompletion(task) }, onDelete = { viewModel.removeTask(task) })
                     }
                 }
             }
-            
             if (showSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = { showSheet = false },
-                    containerColor = Color.White
-                ) {
-                    AddTaskContent(
-                        onAddTask = { title, category ->
-                            viewModel.addTask(title, category)
-                            showSheet = false
-                        }
-                    )
+                ModalBottomSheet(onDismissRequest = { showSheet = false }, containerColor = Color.White) {
+                    AddTaskContent(onAddTask = { title, category -> viewModel.addTask(title, category); showSheet = false })
                 }
             }
         }
