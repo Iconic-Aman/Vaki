@@ -230,8 +230,8 @@ class MainActivity : ComponentActivity() {
                     vakiVoice.speak(intent.response) { onComplete() }
                 }
                 is VakiIntent.Unknown -> {
-                    // Only apologize if it was truly unknown to both
-                    vakiVoice.speak("I heard you say ${intent.rawText}, but I'm not sure how to help with that.") { onComplete() }
+                    // Provide a more helpful error message suggesting network check
+                    vakiVoice.speak("I didn't catch that. Please check your network connection.") { onComplete() }
                 }
             }
         }
