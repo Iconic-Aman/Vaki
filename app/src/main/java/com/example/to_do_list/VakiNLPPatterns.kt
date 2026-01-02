@@ -26,9 +26,9 @@ object VakiNLPPatterns {
 
     // Patterns for listing tasks
     val LIST_PATTERNS = listOf(
-        Regex("(?i).*(?:can you |could you |please )?(?:read|list|show|tell me|display|recite)(?: all)?(?: of)?(?: my| the)? (?:tasks?|list|to-?do ?(?:list)?|items?|plans?|agenda|schedule)"),
-        Regex("(?i).*(?:would you mind |could you )reading my (?:list|tasks)"),
-        Regex("(?i).*what(?: are|'s| is) (?:on|in)(?: my| the)? (?:list|tasks?|to-?do|schedule)"),
+        Regex("(?i).*(?:can you |could you |please )?(?:read|list|show|tell me|display|recite)(?: all)?(?: of)?(?: my| the)? (?:tasks?|list|to-?do ?(?:list)?|items?|plans?|agenda|schedule|calendar)"),
+        Regex("(?i).*(?:would you mind |could you )reading my (?:list|tasks|calendar)"),
+        Regex("(?i).*what(?: are|'s| is) (?:on|in)(?: my| the)? (?:list|tasks?|to-?do|schedule|calendar|plan)"),
         Regex("(?i).*what do i (?:have|have to do|need to do|got going on)(?: today)?"),
         Regex("(?i).*(?:check|open|view|see) (?:my|the)? (?:list|tasks?|to-?do)"),
         Regex("(?i).*(?:read|tell me) everything"),
@@ -57,5 +57,12 @@ object VakiNLPPatterns {
         Regex("(?i)^done$"),
         Regex("(?i)^cancel$"),
         Regex("(?i)^nothing else$")
+    )
+
+    // Patterns for asking date
+    val DATE_PATTERNS = listOf(
+        Regex("(?i).*what(?:'s| is) (?:today's|the) date"),
+        Regex("(?i).*tell me (?:today's|the) date"),
+        Regex("(?i).*what day is (?:it|today)")
     )
 }

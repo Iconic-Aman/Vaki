@@ -7,6 +7,7 @@ sealed class VakiIntent {
     object ListTasks : VakiIntent()
     data class Speak(val response: String) : VakiIntent()
     object Finish : VakiIntent()
+    object TellDate : VakiIntent()
     data class Unknown(val rawText: String) : VakiIntent()
 }
 
@@ -48,6 +49,11 @@ class VakiBrain {
         // Check for Stop/Finish
         VakiNLPPatterns.STOP_PATTERNS.forEach { pattern ->
             if (pattern.matches(lowerText)) return VakiIntent.Finish
+        }
+
+        // Check for Date
+        VakiNLPPatterns.DATE_PATTERNS.forEach { pattern ->
+            if (pattern.matches(lowerText)) return VakiIntent.TellDate
         }
 
         return VakiIntent.Unknown(text)

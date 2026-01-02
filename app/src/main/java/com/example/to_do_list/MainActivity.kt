@@ -245,6 +245,11 @@ class MainActivity : ComponentActivity() {
                         vakiVoice.speak("Okay, stopping now. Thank you!") { onComplete() }
                     }
                 }
+                is VakiIntent.TellDate -> {
+                    val sdf = java.text.SimpleDateFormat("EEEE, dd MMMM yyyy", Locale.getDefault())
+                    val dateStr = sdf.format(Date())
+                    vakiVoice.speak("Today is $dateStr.") { onComplete() }
+                }
             }
         }
     }
