@@ -50,13 +50,15 @@ object VakiNLPPatterns {
 
     // Patterns for stopping conversation
     val STOP_PATTERNS = listOf(
-        Regex("(?i)^(?:no|nope|nah)(?:.*)?"),
+        Regex("(?i)^(?:no|nope|nah|nay)(?:.*)?"),
         Regex("(?i).*(?:that's|thats) (?:all|it|everything)"),
         Regex("(?i)^stop$"),
         Regex("(?i).*(?:i'm|i am) done"),
         Regex("(?i)^done$"),
         Regex("(?i)^cancel$"),
-        Regex("(?i)^nothing else$")
+        Regex("(?i)^nothing(?: else)?$"),
+        Regex("(?i)^not really$"),
+        Regex("(?i)^exit$")
     )
 
     // Patterns for asking date

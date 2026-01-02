@@ -31,11 +31,11 @@ class TaskAIService {
         val key = com.example.to_do_list.network.OpenRouterConfig.getActiveKey()
         Log.d("VakiDebug", "LLM Processing: '$voskText' | KeyPresent: ${key.isNotEmpty()} (Len: ${key.length})")
         
-        // Tested & Confirmed Available Models (Jan 2026)
+        // Tested & Confirmed Available Models (Max 3 allowed)
         val fallbackModels = listOf(
             "google/gemma-3-4b-it:free",              // Small & New (4B)
             "meta-llama/llama-3.2-3b-instruct:free",  // Reliable (3B)
-            "mistralai/mistral-7b-instruct:free"      // Trusted Fallback (7B)
+            "qwen/qwen-2.5-vl-7b-instruct:free"       // Alternative Provider
         )
 
         // Context variables

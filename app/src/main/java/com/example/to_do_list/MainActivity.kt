@@ -206,7 +206,10 @@ class MainActivity : ComponentActivity() {
                     viewModel.addTask(intent.title, "Voice")
                     // CONTINUOUS MODE: Ask for more, restart listening, DO NOT call onComplete yet.
                     vakiVoice.speak("Added ${intent.title}. Anything else?") {
-                        vakiSpeechRecognizer.startListening()
+                        // Delay slightly to ensure TTS is fully done and audio channel is clear
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            vakiSpeechRecognizer.startListening()
+                        }, 500)
                     }
                 }
                 is VakiIntent.DeleteTask -> {
