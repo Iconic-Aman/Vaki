@@ -235,7 +235,7 @@ class MainActivity : ComponentActivity() {
                 }
                 is VakiIntent.Unknown -> {
                     // Provide a more helpful error message suggesting network check
-                    vakiVoice.speak("I heard you say ${intent.rawText}, but I didn't catch that. If you're asking something complex, please check your network connection.") { onComplete() }
+                    vakiVoice.speak("I didn't catch that. Please check your network connection.") { onComplete() }
                 }
                 is VakiIntent.Finish -> {
                     val taskList = viewModel.tasks.joinToString(", ") { it.title }

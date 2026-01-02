@@ -16,6 +16,8 @@ data class Message(
 
 // Response Data Models
 data class ChatResponse(
+    val id: String,
+    val model: String, // The model that actually handled the request
     val choices: List<Choice>
 )
 

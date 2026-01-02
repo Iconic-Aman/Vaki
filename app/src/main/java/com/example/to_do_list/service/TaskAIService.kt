@@ -31,11 +31,11 @@ class TaskAIService {
         val key = com.example.to_do_list.network.OpenRouterConfig.getActiveKey()
         Log.d("VakiDebug", "LLM Processing: '$voskText' | KeyPresent: ${key.isNotEmpty()} (Len: ${key.length})")
         
-        // Verified functional models (User requested small models)
+        // Tested & Confirmed Available Models (Jan 2026)
         val fallbackModels = listOf(
-            "meta-llama/llama-3.2-1b-instruct:free", // Verified working (~1B params)
-            "google/gemini-2.0-flash-exp:free",      // Fast fallback
-            "mistralai/mistral-7b-instruct:free"     // Reliable backup
+            "google/gemma-3-4b-it:free",              // Small & New (4B)
+            "meta-llama/llama-3.2-3b-instruct:free",  // Reliable (3B)
+            "mistralai/mistral-7b-instruct:free"      // Trusted Fallback (7B)
         )
 
         // Context variables
@@ -88,16 +88,18 @@ class TaskAIService {
             val response = api.getCompletion(request = request)
             
             if (response.isSuccessful) {
-                val content = response.body()?.choices?.firstOrNull()?.message?.content?.trim()
-                Log.d("VakiDebug", "LLM Response: $content")
+                val responseBody = response.body()
+                val content = responseBody?.choices?.firstOrNull()?.message?.content?.trim()
+                val modelUsed = responseBody?.model ?: "Unknown Model"
+                Log.d("VakiDebug", "LLM Success: $content (Model: $modelUsed)")
                 content
             } else {
                 val code = response.code()
+                val errorBody = response.errorBody()?.string() ?: "No error body"
                 if (code == 429) {
-                    Log.w("VakiDebug", "LLM Rate Limit Reached (429). Falling back to VakiBrain.")
+                    Log.w("VakiDebug", "LLM Rate Limit Reached (429). Models attempted: $fallbackModels. Falling back to VakiBrain.")
                 } else {
-                    val errorBody = response.errorBody()?.string() ?: "No error body"
-                    Log.e("VakiDebug", "LLM API Error: $code - $errorBody")
+                    Log.e("VakiDebug", "LLM API Error: $code - $errorBody. Models attempted: $fallbackModels")
                 }
                 null // Trigger fallback
             }
