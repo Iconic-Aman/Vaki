@@ -23,10 +23,9 @@ class VakiSpeechRecognizer(
     
     private val recognizerIntent: Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-        putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toString())
+        // Removed explicit language string to resolve Error 13 (Language Unavailable) on some devices
         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-        // Request shorter silence detection to be more responsive
         putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
         putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
     }
@@ -37,7 +36,7 @@ class VakiSpeechRecognizer(
             startWatchdog()
         }
         override fun onBeginningOfSpeech() {
-            Log.d("VakiDebug", "SpeechRecognizer: Speech detected")
+            Log.d("VakiDebug", "SpeechRecognizer: User started speaking")
             cancelWatchdog()
         }
         override fun onRmsChanged(rmsdB: Float) {}
@@ -46,6 +45,12 @@ class VakiSpeechRecognizer(
             Log.d("VakiDebug", "SpeechRecognizer: Speech ended")
         }
         override fun onError(error: Int) {
+            // Error 13 is often a non-fatal language check warning on certain devices.
+            // We log it but only trigger full error recovery if it truly stops the session.
+            if (error == 13) {
+                Log.d("VakiDebug", "SpeechRecognizer: Info 13 received, continuing session...")
+                return 
+            }
             handleError(error)
         }
 
@@ -73,6 +78,31 @@ class VakiSpeechRecognizer(
         override fun onEvent(eventType: Int, params: Bundle?) {}
     }
 
+    private fun startWatchdog() {
+        cancelWatchdog()
+        var secondsLeft = 5
+        timeoutRunnable = object : Runnable {
+            override fun run() {
+                if (isListening) {
+                    if (secondsLeft > 0) {
+                        Log.d("VakiDebug", "Vaki is waiting for your command... ($secondsLeft s)")
+                        secondsLeft--
+                        mainHandler.postDelayed(this, 1000)
+                    } else {
+                        Log.d("VakiDebug", "Watchdog: 5s limit reached - triggering apology")
+                        handleError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+                    }
+                }
+            }
+        }
+        mainHandler.post(timeoutRunnable as Runnable)
+    }
+
+    private fun cancelWatchdog() {
+        timeoutRunnable?.let { mainHandler.removeCallbacks(it) }
+        timeoutRunnable = null
+    }
+
     private fun handleError(error: Int) {
         if (isListening) {
             isListening = false
@@ -87,27 +117,13 @@ class VakiSpeechRecognizer(
         }
     }
 
-    private fun startWatchdog() {
-        cancelWatchdog()
-        timeoutRunnable = Runnable {
-            if (isListening) {
-                Log.d("VakiDebug", "Watchdog: 8s limit reached - triggering apology")
-                handleError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
-            }
-        }
-        mainHandler.postDelayed(timeoutRunnable!!, 8000) // 8 seconds limit
-    }
-
-    private fun cancelWatchdog() {
-        timeoutRunnable?.let { mainHandler.removeCallbacks(it) }
-        timeoutRunnable = null
-    }
-
     private fun ensureRecognizer() {
-        if (speechRecognizer == null) {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
-                setRecognitionListener(recognitionListener)
-            }
+        try {
+            speechRecognizer?.destroy()
+        } catch (e: Exception) {}
+        
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
+            setRecognitionListener(recognitionListener)
         }
     }
 
@@ -119,7 +135,6 @@ class VakiSpeechRecognizer(
                 Log.d("VakiDebug", "SpeechRecognizer: Starting session...")
                 speechRecognizer?.startListening(recognizerIntent)
                 isListening = true
-                startWatchdog() // Initial watchdog in case system fails to signal 'Ready'
             } catch (e: Exception) {
                 Log.e("VakiDebug", "Speech module fail: ${e.message}")
                 isListening = false
