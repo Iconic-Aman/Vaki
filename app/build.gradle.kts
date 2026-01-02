@@ -16,6 +16,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Read openrouter_key from .env (check both cases)
+        val key = envProperties.getProperty("openrouter_key") 
+               ?: envProperties.getProperty("OPENROUTER_KEY") 
+               ?: ""
+        buildConfigField("String", "OPENROUTER_API_KEY", "\"$key\"")
     }
 
     buildTypes {
@@ -36,6 +42,21 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    // Load .env file
+    val envFile = rootProject.file(".env")
+    val envProperties = java.util.Properties()
+    if (envFile.exists()) {
+        envProperties.load(java.io.FileInputStream(envFile))
+    }
+
+    defaultConfig {
+        // ... existing config ...
+        // Read openrouter_key from .env, fallback to empty string if missing to avoid build error
+        val key = envProperties.getProperty("openrouter_key") ?: ""
+        buildConfigField("String", "OPENROUTER_API_KEY", "\"$key\"")
     }
 }
 
@@ -54,6 +75,11 @@ dependencies {
     // Vosk for Wake-Word detection
     implementation(libs.vosk.android)
     implementation(libs.gson)
+
+    // Retrofit & Networking
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

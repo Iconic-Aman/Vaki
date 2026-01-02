@@ -35,12 +35,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.to_do_list.ui.*
 import com.example.to_do_list.ui.theme.VakiTheme
 import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
+import com.example.to_do_list.service.TaskAIService
 import java.util.*
 
 class MainActivity : ComponentActivity() {
     private lateinit var vakiVoice: VakiVoiceManager
     private lateinit var vakiSpeechRecognizer: VakiSpeechRecognizer
     private val vakiBrain = VakiBrain()
+    private val taskAIService = TaskAIService()
     private var wakeWordService: VakiWakeWordService? = null
     private var isBound = false
 
@@ -159,37 +162,67 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleVoiceCommand(command: String, viewModel: TaskViewModel, onComplete: () -> Unit) {
-        val intent = vakiBrain.parse(command)
-        Log.d("VakiDebug", "Intent detected: $intent")
+        lifecycleScope.launch {
+            // 1. Try Online LLM First
+            val aiResponse = taskAIService.processVoskTask(command)
+            var intent: VakiIntent? = null
 
-        when (intent) {
-            is VakiIntent.AddTask -> {
-                viewModel.addTask(intent.title, "Voice")
-                vakiVoice.speak("Got it! I've added ${intent.title} to your list.") { onComplete() }
-            }
-            is VakiIntent.DeleteTask -> {
-                val taskToDelete = viewModel.tasks.find { it.title.lowercase().contains(intent.title.lowercase()) }
-                if (taskToDelete != null) {
-                    viewModel.removeTask(taskToDelete)
-                    vakiVoice.speak("I've removed the task ${taskToDelete.title} for you.") { onComplete() }
-                } else {
-                    vakiVoice.speak("I couldn't find a task named ${intent.title} in your list.") { onComplete() }
+            if (aiResponse != null) {
+                // Parse strict LLM response
+                intent = when {
+                    aiResponse.startsWith("ADD") -> {
+                        val title = aiResponse.removePrefix("ADD").trim()
+                        if (title.isNotEmpty()) VakiIntent.AddTask(title) else null
+                    }
+                    aiResponse.startsWith("DELETE") -> {
+                        val title = aiResponse.removePrefix("DELETE").trim()
+                        if (title.isNotEmpty()) VakiIntent.DeleteTask(title) else null
+                    }
+                    aiResponse.contains("COUNT") -> VakiIntent.CountTasks
+                    aiResponse.contains("LIST") -> VakiIntent.ListTasks
+                    else -> null // Unknown or failed parse
                 }
             }
-            is VakiIntent.CountTasks -> {
-                val count = viewModel.tasks.size
-                vakiVoice.speak("You have $count tasks in total, Aman.") { onComplete() }
+
+            // 2. Fallback to Local VakiBrain if LLM failed (null) or returned non-intent
+            if (intent == null) {
+                Log.d("VakiDebug", "LLM failed or returned unknown, falling back to VakiBrain")
+                intent = vakiBrain.parse(command)
             }
-            is VakiIntent.ListTasks -> {
-                val taskList = viewModel.tasks.joinToString(", ") { it.title }
-                if (taskList.isNotEmpty()) {
-                    vakiVoice.speak("Your tasks are: $taskList.") { onComplete() }
-                } else {
-                    vakiVoice.speak("Your task list is currently empty.") { onComplete() }
+
+            Log.d("VakiDebug", "Final Intent: $intent")
+
+            // 3. Execute Intent
+            when (intent) {
+                 is VakiIntent.AddTask -> {
+                    viewModel.addTask(intent.title, "Voice")
+                    vakiVoice.speak("Got it! I've added ${intent.title} to your list.") { onComplete() }
                 }
-            }
-            is VakiIntent.Unknown -> {
-                vakiVoice.speak("I heard you say ${intent.rawText}, but I'm not sure how to help with that yet.") { onComplete() }
+                is VakiIntent.DeleteTask -> {
+                    val taskToDelete = viewModel.tasks.find { it.title.lowercase().contains(intent.title.lowercase()) }
+                    if (taskToDelete != null) {
+                        viewModel.removeTask(taskToDelete)
+                        vakiVoice.speak("I've removed the task ${taskToDelete.title} for you.") { onComplete() }
+                    } else {
+                        vakiVoice.speak("I couldn't find a task named ${intent.title} in your list.") { onComplete() }
+                    }
+                }
+                is VakiIntent.CountTasks -> {
+                    val count = viewModel.tasks.size
+                    vakiVoice.speak("You have $count tasks in total, Aman.") { onComplete() }
+                }
+                is VakiIntent.ListTasks -> {
+                    val taskList = viewModel.tasks.joinToString(", ") { it.title }
+                    if (taskList.isNotEmpty()) {
+                        vakiVoice.speak("Your tasks are: $taskList.") { onComplete() }
+                    } else {
+                        vakiVoice.speak("Your task list is currently empty.") { onComplete() }
+                    }
+                }
+                is VakiIntent.Unknown -> {
+                    // Only apologize if it was truly unknown to both
+                    vakiVoice.speak("I heard you say ${intent.rawText}, but I'm not sure how to help with that.") { onComplete() }
+                }
             }
         }
     }
