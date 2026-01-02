@@ -42,14 +42,25 @@ class TaskAIService {
         val prompt = """
             You are a task manager voice assistant. The user said: "$voskText". 
             
-            Analyze the intent:
-            1. If they want to ADD a task, reply ONLY with: ADD [exact task content]
-            2. If they want to DELETE a task, reply ONLY with: DELETE [task keyword]
-            3. If they want to COUNT tasks, reply ONLY with: COUNT
-            4. If they want to LIST tasks, reply ONLY with: LIST
-            5. If it's none of the above, reply with: UNKNOWN
+            Analyze the intent strictly. you will reply the user based on their question , if they ask about task then you'll follow TASK_RULES below 
             
-            Do not add any other text, punctuation, or chat.
+            TASK Rules:
+            1. If they want to ADD a task, reply ONLY with: i have added task [exact task content]
+            2. If they want to DELETE a task, reply ONLY with: i have deleted task [task keyword]
+            3. If they want to COUNT tasks, reply ONLY with:  you have COUNT tasks
+            4. If they want to LIST tasks, reply ONLY with: i have LIST tasks
+            5. If the user asks about time, weather, general knowledge, or random chat: reply with: answer [concise response]
+            
+            Examples:   
+            - "Buy milk" -> i have added task Buy milk
+            - "Remove milk" -> i have deleted task milk
+            - "How many tasks?" -> you have total COUNT tasks
+            - "What do I have to do?" -> i have LIST tasks
+            - "What is the time?" -> answer It is currently 5 PM
+            - "Who is the president?" -> answer The president is...
+            - "Hello" -> answer Hello there! How can I help?
+            
+            Reply with ONE alias from above. Do not explain.
         """.trimIndent()
 
         val request = ChatRequest(

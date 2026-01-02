@@ -169,17 +169,24 @@ class MainActivity : ComponentActivity() {
 
             if (aiResponse != null) {
                 // Parse strict LLM response
+                val lowerResponse = aiResponse.lowercase()
                 intent = when {
-                    aiResponse.startsWith("ADD") -> {
-                        val title = aiResponse.removePrefix("ADD").trim()
+                    lowerResponse.startsWith("i have added task") -> {
+                        val title = aiResponse.substringAfter("i have added task").trim()
                         if (title.isNotEmpty()) VakiIntent.AddTask(title) else null
                     }
-                    aiResponse.startsWith("DELETE") -> {
-                        val title = aiResponse.removePrefix("DELETE").trim()
+                    lowerResponse.startsWith("i have deleted task") -> {
+                         val title = aiResponse.substringAfter("i have deleted task").trim()
                         if (title.isNotEmpty()) VakiIntent.DeleteTask(title) else null
                     }
-                    aiResponse.contains("COUNT") -> VakiIntent.CountTasks
-                    aiResponse.contains("LIST") -> VakiIntent.ListTasks
+                    lowerResponse.contains("count") -> VakiIntent.CountTasks
+                    // The prompt "i have LIST tasks" contains "list"
+                    lowerResponse.contains("list") -> VakiIntent.ListTasks
+                    // General Answer
+                    lowerResponse.startsWith("answer") -> {
+                        val text = aiResponse.substringAfter("answer").trim()
+                        if (text.isNotEmpty()) VakiIntent.Speak(text) else null
+                    }
                     else -> null // Unknown or failed parse
                 }
             }
@@ -218,6 +225,9 @@ class MainActivity : ComponentActivity() {
                     } else {
                         vakiVoice.speak("Your task list is currently empty.") { onComplete() }
                     }
+                }
+                is VakiIntent.Speak -> {
+                    vakiVoice.speak(intent.response) { onComplete() }
                 }
                 is VakiIntent.Unknown -> {
                     // Only apologize if it was truly unknown to both

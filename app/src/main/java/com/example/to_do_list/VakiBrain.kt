@@ -5,6 +5,7 @@ sealed class VakiIntent {
     data class DeleteTask(val title: String) : VakiIntent()
     object CountTasks : VakiIntent()
     object ListTasks : VakiIntent()
+    data class Speak(val response: String) : VakiIntent()
     data class Unknown(val rawText: String) : VakiIntent()
 }
 
