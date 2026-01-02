@@ -10,37 +10,39 @@ sealed class VakiIntent {
 
 class VakiBrain {
     /**
-     * Parses raw text into a structured intent that Vaki can execute.
+     * Parses raw text into a structured intent using NLP patterns.
      */
     fun parse(text: String): VakiIntent {
         val lowerText = text.lowercase().trim()
-        
-        return when {
-            // Intent: ADD
-            lowerText.contains("add task") || lowerText.startsWith("add ") -> {
-                val title = lowerText.replace("add task", "").replace("add", "").trim()
-                if (title.isNotEmpty()) VakiIntent.AddTask(title.replaceFirstChar { it.uppercase() })
-                else VakiIntent.Unknown(text)
+
+        // Check for Add Task
+        VakiNLPPatterns.ADD_PATTERNS.forEach { pattern ->
+            val match = pattern.find(lowerText)
+            if (match != null) {
+                val title = match.groupValues[1].trim()
+                if (title.isNotEmpty()) return VakiIntent.AddTask(title.replaceFirstChar { it.uppercase() })
             }
-            
-            // Intent: DELETE
-            lowerText.contains("delete") || lowerText.contains("remove") -> {
-                val title = lowerText.replace("delete", "").replace("remove", "").trim()
-                if (title.isNotEmpty()) VakiIntent.DeleteTask(title)
-                else VakiIntent.Unknown(text)
-            }
-            
-            // Intent: COUNT
-            lowerText.contains("how many") || lowerText.contains("total") || lowerText.contains("count") -> {
-                VakiIntent.CountTasks
-            }
-            
-            // Intent: LIST
-            lowerText.contains("read") || lowerText.contains("list") || lowerText.contains("tell me my tasks") -> {
-                VakiIntent.ListTasks
-            }
-            
-            else -> VakiIntent.Unknown(text)
         }
+
+        // Check for Delete Task
+        VakiNLPPatterns.DELETE_PATTERNS.forEach { pattern ->
+            val match = pattern.find(lowerText)
+            if (match != null) {
+                val title = match.groupValues[1].trim()
+                if (title.isNotEmpty()) return VakiIntent.DeleteTask(title)
+            }
+        }
+
+        // Check for Count Tasks
+        VakiNLPPatterns.COUNT_PATTERNS.forEach { pattern ->
+            if (pattern.containsMatchIn(lowerText)) return VakiIntent.CountTasks
+        }
+
+        // Check for List Tasks
+        VakiNLPPatterns.LIST_PATTERNS.forEach { pattern ->
+            if (pattern.containsMatchIn(lowerText)) return VakiIntent.ListTasks
+        }
+
+        return VakiIntent.Unknown(text)
     }
 }
