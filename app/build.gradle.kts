@@ -1,7 +1,18 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+}
+
+
+// Load .env file at top level
+val envFile = rootProject.file(".env")
+val envProperties = Properties()
+if (envFile.exists()) {
+    envProperties.load(FileInputStream(envFile))
 }
 
 android {
@@ -43,20 +54,6 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
-    }
-
-    // Load .env file
-    val envFile = rootProject.file(".env")
-    val envProperties = java.util.Properties()
-    if (envFile.exists()) {
-        envProperties.load(java.io.FileInputStream(envFile))
-    }
-
-    defaultConfig {
-        // ... existing config ...
-        // Read openrouter_key from .env, fallback to empty string if missing to avoid build error
-        val key = envProperties.getProperty("openrouter_key") ?: ""
-        buildConfigField("String", "OPENROUTER_API_KEY", "\"$key\"")
     }
 }
 
